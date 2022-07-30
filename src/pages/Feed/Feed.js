@@ -8,8 +8,8 @@ import Paginator from '../../components/Paginator/Paginator';
 import Loader from '../../components/Loader/Loader';
 import ErrorHandler from '../../components/ErrorHandler/ErrorHandler';
 import './Feed.css';
-
-const server = 'http://localhost:8080';
+//? Import the server URL
+import { server } from '../../util/server.js';
 
 class Feed extends Component {
 	state = {
