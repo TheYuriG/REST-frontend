@@ -27,7 +27,7 @@ class SinglePost extends Component {
 				this.setState({
 					title: resData.post.title,
 					author: resData.post.creator.name,
-					image: server + resData.post.imageUrl,
+					image: server + '/' + resData.post.imageUrl,
 					date: new Date(resData.post.createdAt).toLocaleDateString('en-US'),
 					content: resData.post.content,
 				});
