@@ -10,6 +10,7 @@ import ErrorHandler from '../../components/ErrorHandler/ErrorHandler';
 import './Feed.css';
 //? Import the server URL
 import { server } from '../../util/server.js';
+import post from '../../components/Feed/Post/Post';
 
 class Feed extends Component {
 	state = {
@@ -61,7 +62,9 @@ class Feed extends Component {
 			})
 			.then((resData) => {
 				this.setState({
-					posts: resData.posts,
+					posts: resData.posts.map((post) => {
+						return { ...post, imagePath: post.imageUrl };
+					}),
 					totalPosts: resData.totalItems,
 					postsLoading: false,
 				});
@@ -116,7 +119,8 @@ class Feed extends Component {
 		let url = server + '/feed/post';
 		let method = 'POST';
 		if (this.state.editPost) {
-			url = 'URL';
+			url = server + '/feed/post/' + this.state.editPost._id;
+			method = 'PUT';
 		}
 
 		fetch(url, {
