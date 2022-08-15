@@ -12,6 +12,8 @@ import SinglePostPage from './pages/Feed/SinglePost/SinglePost';
 import LoginPage from './pages/Auth/Login';
 import SignupPage from './pages/Auth/Signup';
 import './App.css';
+//? Import the server URL
+import { server } from './util/server.js';
 
 class App extends Component {
 	state = {
@@ -58,7 +60,14 @@ class App extends Component {
 	loginHandler = (event, authData) => {
 		event.preventDefault();
 		this.setState({ authLoading: true });
-		fetch('URL')
+		fetch(server + '/auth/authenticate', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				email: authData.email,
+				password: authData.password,
+			}),
+		})
 			.then((res) => {
 				if (res.status === 422) {
 					throw new Error('Validation failed.');
