@@ -25,7 +25,7 @@ class Feed extends Component {
 	};
 
 	componentDidMount() {
-		fetch(server + '/feed/status', {
+		fetch(server + '/auth/status', {
 			headers: {
 				Authorization: 'Bearer ' + this.props.token,
 			},
@@ -85,7 +85,7 @@ class Feed extends Component {
 		event.preventDefault();
 		const formData = new FormData();
 		formData.append('status', this.state.status);
-		fetch(server + '/feed/status', {
+		fetch(server + '/auth/status', {
 			method: 'POST',
 			body: formData,
 			headers: {
