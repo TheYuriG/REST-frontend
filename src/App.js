@@ -73,13 +73,11 @@ class App extends Component {
 					throw new Error('Validation failed.');
 				}
 				if (res.status !== 200 && res.status !== 201) {
-					console.log('Error!');
 					throw new Error('Could not authenticate you!');
 				}
 				return res.json();
 			})
 			.then((resData) => {
-				console.log(resData);
 				this.setState({
 					isAuth: true,
 					token: resData.token,
@@ -122,13 +120,11 @@ class App extends Component {
 					);
 				}
 				if (res.status !== 200 && res.status !== 201) {
-					console.log('Error!');
 					throw new Error('Creating a user failed!');
 				}
 				return res.json();
 			})
 			.then((resData) => {
-				console.log(resData);
 				this.setState({ isAuth: false, authLoading: false });
 				this.props.history.replace('/');
 			})
