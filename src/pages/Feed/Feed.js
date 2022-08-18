@@ -12,7 +12,7 @@ import ErrorHandler from '../../components/ErrorHandler/ErrorHandler';
 import './Feed.css';
 //? Import the server URL
 import { server } from '../../util/server.js';
-import post from '../../components/Feed/Post/Post';
+// import post from '../../components/Feed/Post/Post';
 
 class Feed extends Component {
 	state = {
@@ -27,48 +27,61 @@ class Feed extends Component {
 	};
 
 	componentDidMount() {
+		//? Make a network request for the logged-in user status
 		fetch(server + '/auth/status', {
 			headers: {
 				Authorization: 'Bearer ' + this.props.token,
 			},
 		})
 			.then((res) => {
+				//? Throw an error if we get anything else other than 200 SUCCESS
 				if (res.status !== 200) {
 					throw new Error('Failed to fetch user status.');
 				}
+				//? Parse the user status response
 				return res.json();
 			})
 			.then((resData) => {
+				//? Pass the response to the state manager and render the status on the client UI
 				resData = JSON.parse(resData);
 				this.setState({ status: resData.status });
 			})
 			.catch(this.catchError);
 
+		//? Once the page has loaded, request to pull the posts from the backend
 		this.loadPosts();
+
 		//? Opens the websocket connection to the backend
 		const socket = openSocket(server, {
 			transports: ['websocket', 'polling'],
 			withCredentials: true,
-			// extraHeaders: {
-			// 	'Access-Control-Allow-Origin': '*',
-			// 	'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE',
-			// 	'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-			// },
 		});
+		//? Listen for 'posts' events on the websocket
 		socket.on('posts', (data) => {
+			//? Add new posts as they come
 			if (data.action === 'create') {
 				this.addPost(data.post);
 			}
 		});
 	}
 
+	//? This function will run once the websocket receives a push payload
+	//? informing a new post was created by any user
 	addPost = (post) => {
 		this.setState((prevState) => {
+			//? Store previous posts again
 			const updatedPosts = [...prevState.posts];
+			//? Check if we are on page 1 (no point in adding posts on UI if we are not there)
 			if (prevState.postPage === 1) {
-				updatedPosts.pop();
-				updatedPosts.unshift(post);
+				//? Check if the maximum number of posts is being displayed
+				if (this.state.posts.length === 10) {
+					//? If we are displaying the max number of posts per page, destroy the oldest
+					updatedPosts.shift();
+				}
+				//? Add the recently added post to the displayed posts
+				updatedPosts.push(post);
 			}
+			//? Update the UI accordingly and increase the totalPosts count for pagination purposes
 			return { posts: updatedPosts, totalPosts: prevState.totalPosts + 1 };
 		});
 	};
@@ -126,9 +139,6 @@ class Feed extends Component {
 				}
 				return res.json();
 			})
-			// .then((resData) => {
-			// 	console.log(resData);
-			// })
 			.catch(this.catchError);
 	};
 
