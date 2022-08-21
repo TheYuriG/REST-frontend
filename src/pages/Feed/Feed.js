@@ -61,6 +61,9 @@ class Feed extends Component {
 			//? Add new posts as they come
 			if (data.action === 'create') {
 				this.addPost(data.post);
+			} //? Update posts as they get updated
+			else if (data.action === 'update') {
+				this.updatePost(data.post);
 			}
 		});
 	}
@@ -83,6 +86,24 @@ class Feed extends Component {
 			}
 			//? Update the UI accordingly and increase the totalPosts count for pagination purposes
 			return { posts: updatedPosts, totalPosts: prevState.totalPosts + 1 };
+		});
+	};
+
+	//? This function runs every time the websocket receives an 'update' event
+	updatePost = (post) => {
+		this.setState((prevState) => {
+			//? Fetch previous posts
+			const updatedPosts = [...prevState.posts];
+			//? Check if the post being updated is currently being displayed by the UI
+			const updatedPostsIndex = updatedPosts.findIndex((p) => p._id === post._id);
+			//? If the post is being displayed, update it
+			if (updatedPostsIndex > -1) {
+				updatedPosts[updatedPostsIndex] = post;
+			}
+			//? Return all posts, regardless if an update was done
+			return {
+				posts: updatedPosts,
+			};
 		});
 	};
 
@@ -199,18 +220,8 @@ class Feed extends Component {
 					creator: resData.post.creator,
 					createdAt: resData.post.createdAt,
 				};
-				this.setState((prevState) => {
-					let updatedPosts = [...prevState.posts];
-					if (prevState.editPost) {
-						const postIndex = prevState.posts.findIndex(
-							(p) => p._id === prevState.editPost._id
-						);
-						updatedPosts[postIndex] = post;
-						// } else if (prevState.posts.length < 2) {
-						// 	updatedPosts = prevState.posts.concat(post);
-					}
+				this.setState(() => {
 					return {
-						posts: updatedPosts,
 						isEditing: false,
 						editPost: null,
 						editLoading: false,
