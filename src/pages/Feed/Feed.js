@@ -65,6 +65,10 @@ class Feed extends Component {
 			else if (data.action === 'update') {
 				this.updatePost(data.post);
 			}
+			//? If a post was deleted, load the posts again
+			else if (data.action === 'delete') {
+				this.loadPosts();
+			}
 		});
 	}
 
@@ -257,11 +261,8 @@ class Feed extends Component {
 				}
 				return res.json();
 			})
-			.then((resData) => {
-				this.setState((prevState) => {
-					const updatedPosts = prevState.posts.filter((p) => p._id !== postId);
-					return { posts: updatedPosts, postsLoading: false };
-				});
+			.then(() => {
+				this.loadPosts();
 			})
 			.catch((err) => {
 				console.log(err);
