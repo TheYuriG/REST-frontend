@@ -76,10 +76,10 @@ class Feed extends Component {
 				//? Check if the maximum number of posts is being displayed
 				if (this.state.posts.length === 10) {
 					//? If we are displaying the max number of posts per page, destroy the oldest
-					updatedPosts.shift();
+					updatedPosts.pop();
 				}
 				//? Add the recently added post to the displayed posts
-				updatedPosts.push(post);
+				updatedPosts.unshift(post);
 			}
 			//? Update the UI accordingly and increase the totalPosts count for pagination purposes
 			return { posts: updatedPosts, totalPosts: prevState.totalPosts + 1 };
