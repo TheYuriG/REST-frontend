@@ -1,6 +1,4 @@
 import React, { Component, Fragment } from 'react';
-//? Import the websocket package
-import openSocket from 'socket.io-client';
 
 import Post from '../../components/Feed/Post/Post';
 import Button from '../../components/Button/Button';
@@ -50,66 +48,7 @@ class Feed extends Component {
 
 		//? Once the page has loaded, request to pull the posts from the backend
 		this.loadPosts();
-
-		//? Opens the websocket connection to the backend
-		const socket = openSocket(server, {
-			transports: ['websocket', 'polling'],
-			withCredentials: true,
-		});
-		//? Listen for 'posts' events on the websocket
-		socket.on('posts', (data) => {
-			//? Add new posts as they come
-			if (data.action === 'create') {
-				this.addPost(data.post);
-			} //? Update posts as they get updated
-			else if (data.action === 'update') {
-				this.updatePost(data.post);
-			}
-			//? If a post was deleted, load the posts again
-			else if (data.action === 'delete') {
-				this.loadPosts();
-			}
-		});
 	}
-
-	//? This function will run once the websocket receives a push payload
-	//? informing a new post was created by any user
-	addPost = (post) => {
-		this.setState((prevState) => {
-			//? Store previous posts again
-			const updatedPosts = [...prevState.posts];
-			//? Check if we are on page 1 (no point in adding posts on UI if we are not there)
-			if (prevState.postPage === 1) {
-				//? Check if the maximum number of posts is being displayed
-				if (this.state.posts.length === 10) {
-					//? If we are displaying the max number of posts per page, destroy the oldest
-					updatedPosts.pop();
-				}
-				//? Add the recently added post to the displayed posts
-				updatedPosts.unshift(post);
-			}
-			//? Update the UI accordingly and increase the totalPosts count for pagination purposes
-			return { posts: updatedPosts, totalPosts: prevState.totalPosts + 1 };
-		});
-	};
-
-	//? This function runs every time the websocket receives an 'update' event
-	updatePost = (post) => {
-		this.setState((prevState) => {
-			//? Fetch previous posts
-			const updatedPosts = [...prevState.posts];
-			//? Check if the post being updated is currently being displayed by the UI
-			const updatedPostsIndex = updatedPosts.findIndex((p) => p._id === post._id);
-			//? If the post is being displayed, update it
-			if (updatedPostsIndex > -1) {
-				updatedPosts[updatedPostsIndex] = post;
-			}
-			//? Return all posts, regardless if an update was done
-			return {
-				posts: updatedPosts,
-			};
-		});
-	};
 
 	loadPosts = (direction) => {
 		if (direction) {
