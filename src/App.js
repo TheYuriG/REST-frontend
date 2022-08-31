@@ -104,27 +104,37 @@ class App extends Component {
 	signupHandler = (event, authData) => {
 		event.preventDefault();
 		this.setState({ authLoading: true });
-		fetch(server + '/auth/register', {
-			method: 'PUT',
+		const graphQLQuery = {
+			query: `
+        mutation {
+            createUser(userInput: {email: "${authData.signupForm.email.value}", 
+            name: "${authData.signupForm.name.value}", 
+            password: "${authData.signupForm.password.value}"}) {
+                _id
+                email
+            }
+        }`,
+		};
+
+		fetch(server + '/graphql', {
+			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				email: authData.signupForm.email.value,
-				password: authData.signupForm.password.value,
-				name: authData.signupForm.name.value,
-			}),
+			body: JSON.stringify(graphQLQuery),
 		})
 			.then((res) => {
-				if (res.status === 422) {
-					throw new Error(
-						"Validation failed. Make sure the email address isn't used yet!"
-					);
-				}
-				if (res.status !== 200 && res.status !== 201) {
-					throw new Error('Creating a user failed!');
-				}
 				return res.json();
 			})
 			.then((resData) => {
+				//? Check specifically if the server returned an
+				//? Unprocessable Entity status code and throw that error
+				if (resData?.errors[0]?.status === 422) {
+					throw new Error('Validation failed!');
+				}
+				//? If not, check if we got any errors and if so, throw that
+				if (resData.errors) {
+					throw new Error('User creation failed!');
+				}
+				//? If no errors, go forward with the request and authenticate the user
 				this.setState({ isAuth: false, authLoading: false });
 				this.props.history.replace('/');
 			})
