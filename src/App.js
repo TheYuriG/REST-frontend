@@ -60,32 +60,42 @@ class App extends Component {
 	loginHandler = (event, authData) => {
 		event.preventDefault();
 		this.setState({ authLoading: true });
-		fetch(server + '/auth/authenticate', {
+		const authenticationGraphQLQuery = {
+			query: `
+            {
+            authenticate(userInput: {email: "${authData.email}", 
+            password: "${authData.password}"}) {
+                token
+                userId
+            }
+        }`,
+		};
+		fetch(server + '/graphql', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				email: authData.email,
-				password: authData.password,
-			}),
+			body: JSON.stringify(authenticationGraphQLQuery),
 		})
 			.then((res) => {
-				if (res.status === 422) {
-					throw new Error('Validation failed.');
-				}
-				if (res.status !== 200 && res.status !== 201) {
-					throw new Error('Could not authenticate you!');
-				}
 				return res.json();
 			})
 			.then((resData) => {
+				//? Check specifically if the server returned an
+				//? Unauthorized status code and throw that error
+				if (resData?.errors[0]?.status === 401) {
+					throw new Error('Failed to login this user, invalid credentials!');
+				}
+				//? If not, check if we got any errors and if so, throw that
+				if (resData.errors) {
+					throw new Error('User login failed!');
+				}
 				this.setState({
 					isAuth: true,
-					token: resData.token,
+					token: resData.data.login.token,
 					authLoading: false,
-					userId: resData.userId,
+					userId: resData.data.login.userId,
 				});
-				localStorage.setItem('token', resData.token);
-				localStorage.setItem('userId', resData.userId);
+				localStorage.setItem('token', resData.data.login.token);
+				localStorage.setItem('userId', resData.data.login.userId);
 				const remainingMilliseconds = 60 * 60 * 1000;
 				const expiryDate = new Date(new Date().getTime() + remainingMilliseconds);
 				localStorage.setItem('expiryDate', expiryDate.toISOString());
@@ -104,7 +114,7 @@ class App extends Component {
 	signupHandler = (event, authData) => {
 		event.preventDefault();
 		this.setState({ authLoading: true });
-		const graphQLQuery = {
+		const registerGraphQLQuery = {
 			query: `
         mutation {
             createUser(userInput: {email: "${authData.signupForm.email.value}", 
@@ -119,7 +129,7 @@ class App extends Component {
 		fetch(server + '/graphql', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(graphQLQuery),
+			body: JSON.stringify(registerGraphQLQuery),
 		})
 			.then((res) => {
 				return res.json();
