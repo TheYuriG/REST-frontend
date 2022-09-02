@@ -61,14 +61,12 @@ class App extends Component {
 		event.preventDefault();
 		this.setState({ authLoading: true });
 		const authenticationGraphQLQuery = {
-			query: `
-            {
-            authenticate(userInput: {email: "${authData.email}", 
-            password: "${authData.password}"}) {
+			query: `{
+            authenticate(email: "${authData.email}", password: "${authData.password}") {
                 token
                 userId
-            }
-        }`,
+                }
+            }`,
 		};
 		fetch(server + '/graphql', {
 			method: 'POST',
