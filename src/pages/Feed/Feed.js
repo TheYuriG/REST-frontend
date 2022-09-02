@@ -129,39 +129,61 @@ class Feed extends Component {
 		this.setState({
 			editLoading: true,
 		});
-		//? Creates a form and upload 'title', 'content' and the image to the server
-		const formData = new FormData();
-		formData.append('title', postData.title);
-		formData.append('content', postData.content);
-		formData.append('image', postData.image);
+		//? Creates an object that is later sent to the graphQL API on the server
+		let graphqlQuery = {
+			query: `
+            mutation {
+                createPost(postInput: {title: "${postData.title}", content: "${postData.content}", imageUrl: "${postData.image}"
+                }   {
+                    _id
+                    title
+                    content
+                    imageUrl
+                    creator {
+                        name
+                    }
+                    createdAt
+                    }
+                )
+            }
+            `,
+		};
 
-		let url = server + '/feed/post';
+		let url = server + '/graphql';
 		let method = 'POST';
 		if (this.state.editPost) {
-			url = server + '/feed/post/' + this.state.editPost._id;
+			url = server + '/graphql';
+			//this.state.editPost._id;
 			method = 'PUT';
 		}
 
 		fetch(url, {
 			method: method,
-			body: formData,
+			body: graphqlQuery,
 			headers: {
 				Authorization: 'Bearer ' + this.props.token,
+				'Content-Type': 'application/json',
 			},
 		})
 			.then((res) => {
-				if (res.status !== 200 && res.status !== 201) {
-					throw new Error('Creating or editing a post failed!');
-				}
 				return res.json();
 			})
-			.then((resData) => {
+			.then(({ data: { createPost: resData } }) => {
+				//? Check specifically if the server returned an
+				//? Unauthorized status code and throw that error
+				if (resData?.errors[0]?.status === 401) {
+					throw new Error('Failed to post, you are not authenticated!');
+				}
+				//? If not, check if we got any errors and if so, throw that
+				if (resData.errors) {
+					throw new Error('Post creation failed!');
+				}
 				const post = {
-					_id: resData.post._id,
-					title: resData.post.title,
-					content: resData.post.content,
-					creator: resData.post.creator,
-					createdAt: resData.post.createdAt,
+					_id: resData._id,
+					title: resData.title,
+					content: resData.content,
+					creator: resData.creator.name,
+					createdAt: resData.createdAt,
 				};
 				this.setState(() => {
 					return {
