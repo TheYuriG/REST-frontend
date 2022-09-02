@@ -131,10 +131,8 @@ class Feed extends Component {
 		});
 		//? Creates an object that is later sent to the graphQL API on the server
 		let graphqlQuery = {
-			query: `
-            mutation {
-                createPost(postInput: {title: "${postData.title}", content: "${postData.content}", imageUrl: "${postData.image}"
-                }   {
+			query: `mutation {
+                createPost(postInput: {title: "${postData.title}", content: "${postData.content}", imageUrl: "postData.image"}) {
                     _id
                     title
                     content
@@ -143,8 +141,7 @@ class Feed extends Component {
                         name
                     }
                     createdAt
-                    }
-                )
+                }
             }
             `,
 		};
@@ -159,7 +156,7 @@ class Feed extends Component {
 
 		fetch(url, {
 			method: method,
-			body: graphqlQuery,
+			body: JSON.stringify(graphqlQuery),
 			headers: {
 				Authorization: 'Bearer ' + this.props.token,
 				'Content-Type': 'application/json',
@@ -168,10 +165,10 @@ class Feed extends Component {
 			.then((res) => {
 				return res.json();
 			})
-			.then(({ data: { createPost: resData } }) => {
+			.then((resData) => {
 				//? Check specifically if the server returned an
 				//? Unauthorized status code and throw that error
-				if (resData?.errors[0]?.status === 401) {
+				if (resData.errors && resData.errors[0].status === 401) {
 					throw new Error('Failed to post, you are not authenticated!');
 				}
 				//? If not, check if we got any errors and if so, throw that
@@ -179,11 +176,11 @@ class Feed extends Component {
 					throw new Error('Post creation failed!');
 				}
 				const post = {
-					_id: resData._id,
-					title: resData.title,
-					content: resData.content,
-					creator: resData.creator.name,
-					createdAt: resData.createdAt,
+					_id: resData.data.createPost._id,
+					title: resData.data.createPost.title,
+					content: resData.data.createPost.content,
+					creator: resData.data.createPost.creator.name,
+					createdAt: resData.data.createPost.createdAt,
 				};
 				this.setState(() => {
 					return {
