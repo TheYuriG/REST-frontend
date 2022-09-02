@@ -79,21 +79,22 @@ class App extends Component {
 			.then((resData) => {
 				//? Check specifically if the server returned an
 				//? Unauthorized status code and throw that error
-				if (resData?.errors[0]?.status === 401) {
+				if (resData.errors && resData.errors[0].status === 401) {
 					throw new Error('Failed to login this user, invalid credentials!');
 				}
 				//? If not, check if we got any errors and if so, throw that
 				if (resData.errors) {
 					throw new Error('User login failed!');
 				}
+
 				this.setState({
 					isAuth: true,
-					token: resData.data.login.token,
+					token: resData.data.authenticate.token,
 					authLoading: false,
-					userId: resData.data.login.userId,
+					userId: resData.data.authenticate.userId,
 				});
-				localStorage.setItem('token', resData.data.login.token);
-				localStorage.setItem('userId', resData.data.login.userId);
+				localStorage.setItem('token', resData.data.authenticate.token);
+				localStorage.setItem('userId', resData.data.authenticate.userId);
 				const remainingMilliseconds = 60 * 60 * 1000;
 				const expiryDate = new Date(new Date().getTime() + remainingMilliseconds);
 				localStorage.setItem('expiryDate', expiryDate.toISOString());
@@ -115,9 +116,7 @@ class App extends Component {
 		const registerGraphQLQuery = {
 			query: `
         mutation {
-            createUser(userInput: {email: "${authData.signupForm.email.value}", 
-            name: "${authData.signupForm.name.value}", 
-            password: "${authData.signupForm.password.value}"}) {
+            createUser(userInput: {email: "${authData.signupForm.email.value}", name: "${authData.signupForm.name.value}", password: "${authData.signupForm.password.value}"}) {
                 _id
                 email
             }
@@ -135,7 +134,7 @@ class App extends Component {
 			.then((resData) => {
 				//? Check specifically if the server returned an
 				//? Unprocessable Entity status code and throw that error
-				if (resData?.errors[0]?.status === 422) {
+				if (resData.errors && resData.errors[0].status === 422) {
 					throw new Error('Validation failed!');
 				}
 				//? If not, check if we got any errors and if so, throw that
