@@ -63,23 +63,50 @@ class Feed extends Component {
 			page--;
 			this.setState({ postPage: page });
 		}
-		fetch(server + '/feed/posts?page=' + page, {
+		const graphqlQueryPosts = {
+			query: `
+                {
+                    posts(page: ${page}) {
+                        posts {
+                            _id
+                            title
+                            content
+                            creator {
+                                name
+                            }
+                            createdAt
+                        }
+                        totalPosts
+                    }
+                }
+            `,
+		};
+		fetch(server + '/graphql', {
+			method: 'POST',
+			body: JSON.stringify(graphqlQueryPosts),
 			headers: {
 				Authorization: 'Bearer ' + this.props.token,
+				'Content-Type': 'application/json',
 			},
 		})
 			.then((res) => {
-				if (res.status !== 200) {
-					throw new Error('Failed to fetch posts.');
-				}
 				return res.json();
 			})
 			.then((resData) => {
+				//? Check specifically if the server returned an
+				//? Unauthorized status code and throw that error
+				if (resData.errors && resData.errors[0].status === 401) {
+					throw new Error('Failed to post, you are not authenticated!');
+				}
+				//? If not, check if we got any errors and if so, throw that
+				if (resData.errors) {
+					throw new Error('Failed to fetch posts!');
+				}
 				this.setState({
-					posts: resData.posts.map((post) => {
+					posts: resData.data.posts.posts.map((post) => {
 						return { ...post, imagePath: post.imageUrl };
 					}),
-					totalPosts: resData.totalItems,
+					totalPosts: resData.data.posts.totalItems,
 					postsLoading: false,
 				});
 			})
@@ -130,7 +157,7 @@ class Feed extends Component {
 			editLoading: true,
 		});
 		//? Creates an object that is later sent to the graphQL API on the server
-		let graphqlQuery = {
+		let graphqlQueryPostCreation = {
 			query: `mutation {
                 createPost(postInput: {title: "${postData.title}", content: "${postData.content}", imageUrl: "postData.image"}) {
                     _id
@@ -156,7 +183,7 @@ class Feed extends Component {
 
 		fetch(url, {
 			method: method,
-			body: JSON.stringify(graphqlQuery),
+			body: JSON.stringify(graphqlQueryPostCreation),
 			headers: {
 				Authorization: 'Bearer ' + this.props.token,
 				'Content-Type': 'application/json',
