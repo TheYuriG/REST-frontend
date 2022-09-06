@@ -47,24 +47,26 @@ class SinglePost extends Component {
 			.then((res) => {
 				return res.json();
 			})
-			.then((resData) => {
+			.then(({errors, data}) => {
 				//? Check specifically if the server returned an
 				//? Unauthorized status code and throw that error
-				if (resData.errors && resData.errors[0].status === 401) {
+				if (errors?.[0]?.status === 401) {
 					throw new Error('Failed to fetch post, you are not authenticated!');
 				}
 				//? If not, check if we got any errors and if so, throw that
-				if (resData.errors) {
+				if (errors) {
 					throw new Error('Unable to retrieve post!');
 				}
 
+				const { singlePost: { title, creator: { name: author }, imageUrl, createdAt: date, content}}= data
+
 				//? Set the data on the UI for the user
 				this.setState({
-					title: resData.data.singlePost.title,
-					author: resData.data.singlePost.creator.name,
-					image: server + '/' + resData.data.singlePost.imageUrl,
-					date: resData.data.singlePost.createdAt,
-					content: resData.data.singlePost.content,
+					title,
+					author,
+					image: server + '/' + imageUrl,
+					date,
+					content,
 				});
 			})
 			.catch((err) => {
