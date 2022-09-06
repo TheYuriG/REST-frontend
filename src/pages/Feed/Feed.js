@@ -194,15 +194,12 @@ class Feed extends Component {
             `,
 				};
 
-				let url = server + '/graphql';
 				let method = 'POST';
 				if (this.state.editPost) {
-					url = server + '/graphql';
-					//this.state.editPost._id;
 					method = 'PUT';
 				}
 
-				return fetch(url, {
+				return fetch(server + '/graphql', {
 					method: method,
 					body: JSON.stringify(graphqlQueryPostCreation),
 					headers: {

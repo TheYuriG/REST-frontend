@@ -16,26 +16,51 @@ class SinglePost extends Component {
 
 	componentDidMount() {
 		const postId = this.props.match.params.postId;
-		fetch(server + '/feed/post/' + postId, {
+		const graphqlSinglePostQuery = {
+			query: `
+                {
+                    singlePost(ID: "${postId}") {
+                        _id
+                        title
+                        content
+                        imageUrl
+                        creator {
+                            name
+                        }
+                        createdAt
+                    }
+                }`,
+		};
+		fetch(server + '/graphql', {
+			method: 'POST',
 			headers: {
 				Authorization: 'Bearer ' + this.props.token,
+				'Content-Type': 'application/json',
 			},
+			body: JSON.stringify(graphqlSinglePostQuery),
 		})
 			.then((res) => {
-				if (res.status !== 200) {
-					throw new Error('Failed to fetch status');
-				}
 				return res.json();
 			})
 			.then((resData) => {
+				//? Check specifically if the server returned an
+				//? Unauthorized status code and throw that error
+				if (resData.errors && resData.errors[0].status === 401) {
+					throw new Error('Failed to fetch post, you are not authenticated!');
+				}
+				//? If not, check if we got any errors and if so, throw that
+				if (resData.errors) {
+					throw new Error('Unable to retrieve post!');
+				}
+
 				this.setState({
-					title: resData.post.title,
-					author: resData.post.creator.name,
-					image: server + '/' + resData.post.imageUrl,
-					date: new Date(resData.post.createdAt).toLocaleDateString('en-US'),
-					content: resData.post.content,
+					title: resData.data.singlePost.title,
+					author: resData.data.singlePost.creator.name,
+					image: server + '/' + resData.data.singlePost.imageUrl,
+					date: resData.data.singlePost.createdAt,
+					content: resData.data.singlePost.content,
 				});
-				console.log(server + resData.post.imageUrl);
+				// console.log(server + resData.post.imageUrl);
 			})
 			.catch((err) => {
 				console.log(err);
