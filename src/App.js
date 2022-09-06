@@ -76,25 +76,27 @@ class App extends Component {
 			.then((res) => {
 				return res.json();
 			})
-			.then((resData) => {
+			.then(({errors, data: {authenticate: { token, userId }}}) => {
 				//? Check specifically if the server returned an
 				//? Unauthorized status code and throw that error
-				if (resData.errors && resData.errors[0].status === 401) {
-					throw new Error('Failed to login this user, invalid credentials!');
-				}
-				//? If not, check if we got any errors and if so, throw that
-				if (resData.errors) {
+
+				if (errors) {
+					if (errors?.[0]?.status === 401) {
+						throw new Error('Failed to login this user, invalid credentials!');
+					}
+					
+					//? If not, then throw the default error message
 					throw new Error('User login failed!');
 				}
 
 				this.setState({
 					isAuth: true,
-					token: resData.data.authenticate.token,
+					token,
 					authLoading: false,
-					userId: resData.data.authenticate.userId,
+					userId,
 				});
-				localStorage.setItem('token', resData.data.authenticate.token);
-				localStorage.setItem('userId', resData.data.authenticate.userId);
+				localStorage.setItem('token', token);
+				localStorage.setItem('userId', userId);
 				const remainingMilliseconds = 60 * 60 * 1000;
 				const expiryDate = new Date(new Date().getTime() + remainingMilliseconds);
 				localStorage.setItem('expiryDate', expiryDate.toISOString());
@@ -131,26 +133,28 @@ class App extends Component {
 			.then((res) => {
 				return res.json();
 			})
-			.then((resData) => {
+			.then(({errors}) => {
 				//? Check specifically if the server returned an
 				//? Unprocessable Entity status code and throw that error
-				if (resData.errors && resData.errors[0].status === 422) {
-					throw new Error('Validation failed!');
-				}
-				//? If not, check if we got any errors and if so, throw that
-				if (resData.errors) {
+				if (errors) {
+					if (errors?.[0]?.status === 422) {
+						throw new Error('Validation failed!');
+					}
+
+					//? If not, then throw the default error message
 					throw new Error('User creation failed!');
 				}
+
 				//? If no errors, go forward with the request and authenticate the user
 				this.setState({ isAuth: false, authLoading: false });
 				this.props.history.replace('/');
 			})
-			.catch((err) => {
-				console.log(err);
+			.catch((error) => {
+				console.log(error);
 				this.setState({
 					isAuth: false,
 					authLoading: false,
-					error: err,
+					error
 				});
 			});
 	};

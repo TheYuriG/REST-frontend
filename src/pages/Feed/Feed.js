@@ -93,21 +93,23 @@ class Feed extends Component {
 			.then((res) => {
 				return res.json();
 			})
-			.then((resData) => {
+			.then(({errors, data: {posts: { posts, totalItems: totalPosts }}}) => {
 				//? Check specifically if the server returned an
 				//? Unauthorized status code and throw that error
-				if (resData.errors && resData.errors[0].status === 401) {
-					throw new Error('Failed to post, you are not authenticated!');
-				}
-				//? If not, check if we got any errors and if so, throw that
-				if (resData.errors) {
+				if (errors) {
+					if (errors?.[0]?.status === 401) {
+						throw new Error('Failed to post, you are not authenticated!');
+					}
+
+					//? If not, then throw the default error message
 					throw new Error('Failed to fetch posts!');
 				}
+
 				this.setState({
-					posts: resData.data.posts.posts.map((post) => {
+					posts: posts.map((post) => {
 						return { ...post, imagePath: post.imageUrl };
 					}),
-					totalPosts: resData.data.posts.totalItems,
+					totalPosts,
 					postsLoading: false,
 				});
 			})
@@ -212,26 +214,28 @@ class Feed extends Component {
 			.then((res) => {
 				return res.json();
 			})
-			.then((resData) => {
+			.then(({errors, data: {createPost: { _id, title, content, imageUrl: imagePath, creator: { name: creator }, createdAt }}}) => {
 				//? Check specifically if the server returned an
 				//? Unauthorized status code and throw that error
-				if (resData.errors && resData.errors[0].status === 401) {
-					throw new Error('Failed to post, you are not authenticated!');
-				}
-				//? If not, check if we got any errors and if so, throw that
-				if (resData.errors) {
+
+				if (errors) {
+					if (errors?.[0]?.status === 401) {
+						throw new Error('Failed to post, you are not authenticated!');
+					}
+
+					//? If not, then throw the default error message
 					throw new Error('Post creation failed!');
 				}
 
 				//? Create an object with all the post data, so we can inject
 				//? that into the state if needed
 				const post = {
-					_id: resData.data.createPost._id,
-					title: resData.data.createPost.title,
-					content: resData.data.createPost.content,
-					imagePath: resData.data.createPost.imageUrl,
-					creator: resData.data.createPost.creator.name,
-					createdAt: resData.data.createPost.createdAt,
+					_id,
+					title,
+					content,
+					imagePath,
+					creator,
+					createdAt,
 				};
 
 				//? Check the state to see if we should render this specific post
