@@ -47,18 +47,17 @@ class SinglePost extends Component {
 			.then((res) => {
 				return res.json();
 			})
-			.then(({errors, data}) => {
+			.then(({errors, data: { singlePost: { title, creator: { name: author }, imageUrl, createdAt: date, content}}}) => {
 				//? Check specifically if the server returned an
 				//? Unauthorized status code and throw that error
-				if (errors?.[0]?.status === 401) {
-					throw new Error('Failed to fetch post, you are not authenticated!');
-				}
-				//? If not, check if we got any errors and if so, throw that
 				if (errors) {
+					if (errors?.[0]?.status === 401) {
+						throw new Error('Failed to fetch post, you are not authenticated!');
+					}
+
+					//? If not, then throw the default error message
 					throw new Error('Unable to retrieve post!');
 				}
-
-				const { singlePost: { title, creator: { name: author }, imageUrl, createdAt: date, content}}= data
 
 				//? Set the data on the UI for the user
 				this.setState({

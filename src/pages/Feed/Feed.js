@@ -93,18 +93,17 @@ class Feed extends Component {
 			.then((res) => {
 				return res.json();
 			})
-			.then(({errors, data}) => {
+			.then(({errors, data: {posts: { posts, totalItems: totalPosts }}}) => {
 				//? Check specifically if the server returned an
 				//? Unauthorized status code and throw that error
-				if (errors?.[0]?.status === 401) {
-					throw new Error('Failed to post, you are not authenticated!');
-				}
-				//? If not, check if we got any errors and if so, throw that
 				if (errors) {
+					if (errors?.[0]?.status === 401) {
+						throw new Error('Failed to post, you are not authenticated!');
+					}
+
+					//? If not, then throw the default error message
 					throw new Error('Failed to fetch posts!');
 				}
-
-				const {posts: { posts, totalItems: totalPosts }} = data
 
 				this.setState({
 					posts: posts.map((post) => {
@@ -215,18 +214,18 @@ class Feed extends Component {
 			.then((res) => {
 				return res.json();
 			})
-			.then(({errors, data}) => {
+			.then(({errors, data: {createPost: { _id, title, content, imageUrl: imagePath, creator: { name: creator }, createdAt }}}) => {
 				//? Check specifically if the server returned an
 				//? Unauthorized status code and throw that error
-				if (errors?.[0]?.status === 401) {
-					throw new Error('Failed to post, you are not authenticated!');
-				}
-				//? If not, check if we got any errors and if so, throw that
+
 				if (errors) {
+					if (errors?.[0]?.status === 401) {
+						throw new Error('Failed to post, you are not authenticated!');
+					}
+
+					//? If not, then throw the default error message
 					throw new Error('Post creation failed!');
 				}
-
-				const {createPost: { _id, title, content, imageUrl: imagePath, creator: { name: creator }, createdAt }} = data
 
 				//? Create an object with all the post data, so we can inject
 				//? that into the state if needed
