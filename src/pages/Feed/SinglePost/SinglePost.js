@@ -15,7 +15,10 @@ class SinglePost extends Component {
 	};
 
 	componentDidMount() {
+		//? Extract the post ID from the URL
 		const postId = this.props.match.params.postId;
+
+		//? Construct the GraphQL query using the postId
 		const graphqlSinglePostQuery = {
 			query: `
                 {
@@ -31,6 +34,8 @@ class SinglePost extends Component {
                     }
                 }`,
 		};
+
+		//? Make a POST request to the GraphQL endpoint to get the post data
 		fetch(server + '/graphql', {
 			method: 'POST',
 			headers: {
@@ -53,6 +58,7 @@ class SinglePost extends Component {
 					throw new Error('Unable to retrieve post!');
 				}
 
+				//? Set the data on the UI for the user
 				this.setState({
 					title: resData.data.singlePost.title,
 					author: resData.data.singlePost.creator.name,
@@ -60,7 +66,6 @@ class SinglePost extends Component {
 					date: resData.data.singlePost.createdAt,
 					content: resData.data.singlePost.content,
 				});
-				// console.log(server + resData.post.imageUrl);
 			})
 			.catch((err) => {
 				console.log(err);
