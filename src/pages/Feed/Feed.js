@@ -317,19 +317,35 @@ class Feed extends Component {
 
 	deletePostHandler = (postId) => {
 		this.setState({ postsLoading: true });
-		fetch(server + '/feed/post/' + postId, {
-			method: 'DELETE',
+		const graphqlQueryPostDeletion = {
+			query: `
+            mutation {
+                deletePost(ID: "${postId}")
+            }`,
+		};
+		fetch(server + '/graphql', {
+			method: 'POST',
+			body: JSON.stringify(graphqlQueryPostDeletion),
 			headers: {
 				Authorization: 'Bearer ' + this.props.token,
+				'Content-Type': 'application/json',
 			},
 		})
 			.then((res) => {
-				if (res.status !== 200 && res.status !== 201) {
-					throw new Error('Deleting a post failed!');
-				}
 				return res.json();
 			})
-			.then(() => {
+			.then(({ errors, deletePost }) => {
+				//? Check if we got any errors
+				if (errors) {
+					//? Check specifically if the server returned an
+					//? Unauthorized status code and throw that error
+					if (errors[0].status === 401) {
+						throw new Error('Failed to delete post, you are not authenticated!');
+					}
+
+					//? If not, then throw the default error message
+					throw new Error('Post deletion failed!');
+				}
 				this.loadPosts();
 			})
 			.catch((err) => {
