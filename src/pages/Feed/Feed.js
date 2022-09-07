@@ -169,7 +169,7 @@ class Feed extends Component {
 		});
 
 		const edit = this.state.editPost ? true : false;
-		const _id = this.state.editPost._id;
+		const _id = this.state.editPost ? this.state.editPost._id : null;
 
 		//? Create a form where you can send the image to the backend
 		const formData = new FormData();
@@ -186,11 +186,10 @@ class Feed extends Component {
 			headers: { Authorization: 'Bearer ' + this.props.token },
 			body: formData,
 		})
-			.then((fileResData) => {
-				//? Image route in the backend server
-				const imageUrl =
-					fileResData.filePath == 'undefined' ? fileResData.filePath : 'oldImage';
-
+			.then((res) => {
+				return res.json();
+			})
+			.then(({ filePath }) => {
 				//? Creates an object that is later sent to the graphQL API on the server
 				const graphqlQueryPostCreation = {
 					query: `mutation {
@@ -198,7 +197,7 @@ class Feed extends Component {
 						edit ? 'ID: "' + this.state.editPost._id + '", ' : ''
 					}title: "${postData.title}", content: "${
 						postData.content
-					}", imageUrl: "${imageUrl}"}) {
+					}", imageUrl: "${filePath}"}) {
                     _id
                     title
                     content
@@ -221,7 +220,6 @@ class Feed extends Component {
 					},
 				});
 			})
-
 			.then((res) => {
 				return res.json();
 			})
