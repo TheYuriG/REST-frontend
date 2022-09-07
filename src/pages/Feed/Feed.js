@@ -93,26 +93,34 @@ class Feed extends Component {
 			.then((res) => {
 				return res.json();
 			})
-			.then(({errors, data: {posts: { posts, totalItems: totalPosts }}}) => {
-				//? Check specifically if the server returned an
-				//? Unauthorized status code and throw that error
-				if (errors) {
-					if (errors?.[0]?.status === 401) {
-						throw new Error('Failed to post, you are not authenticated!');
+			.then(
+				({
+					errors,
+					data: {
+						posts: { posts, totalItems: totalPosts },
+					},
+				}) => {
+					//? Check if we got any errors
+					if (errors) {
+						//? Check specifically if the server returned an
+						//? Unauthorized status code and throw that error
+						if (errors[0].status === 401) {
+							throw new Error('Failed to post, you are not authenticated!');
+						}
+
+						//? If not, then throw the default error message
+						throw new Error('Failed to fetch posts!');
 					}
 
-					//? If not, then throw the default error message
-					throw new Error('Failed to fetch posts!');
+					this.setState({
+						posts: posts.map((post) => {
+							return { ...post, imagePath: post.imageUrl };
+						}),
+						totalPosts,
+						postsLoading: false,
+					});
 				}
-
-				this.setState({
-					posts: posts.map((post) => {
-						return { ...post, imagePath: post.imageUrl };
-					}),
-					totalPosts,
-					postsLoading: false,
-				});
-			})
+			)
 			.catch(this.catchError);
 	};
 
@@ -214,66 +222,80 @@ class Feed extends Component {
 			.then((res) => {
 				return res.json();
 			})
-			.then(({errors, data: {createPost: { _id, title, content, imageUrl: imagePath, creator: { name: creator }, createdAt }}}) => {
-				//? Check specifically if the server returned an
-				//? Unauthorized status code and throw that error
-
-				if (errors) {
-					if (errors?.[0]?.status === 401) {
-						throw new Error('Failed to post, you are not authenticated!');
-					}
-
-					//? If not, then throw the default error message
-					throw new Error('Post creation failed!');
-				}
-
-				//? Create an object with all the post data, so we can inject
-				//? that into the state if needed
-				const post = {
-					_id,
-					title,
-					content,
-					imagePath,
-					creator,
-					createdAt,
-				};
-
-				//? Check the state to see if we should render this specific post
-				this.setState((previousState) => {
-					//? Create a variable to store the current posts
-					let updatedPosts = [...previousState.posts];
-
-					//? If we are editing a post that is currently being displayed
-					//? on screen, we need to update it after the editing is complete
-					if (previousState.editPost) {
-						//? Find where the post is on the user screen
-						const postIndex = previousState.posts.findIndex(
-							(p) => p._id === previousState.editPost._id
-						);
-						//? Update that specific post with the new updated information
-						updatedPosts[postIndex] = post;
-					} else if (previousState.postPage === 1) {
-						//? If we are on page 1 and we are not editing a post, then we must
-						//? be creating a new one. Since our posts are ordered from newest to
-						//? oldest, this newly created post needs to be moved to the very top
-						//? of our displayed posts list
-						updatedPosts.unshift(post);
-						//? If adding the new post overflows the page and disrespects the page
-						//? limit, we must destroy the last post as it will now be on the
-						//? next page instead
-						if (updatedPosts.length > (previousState.postLimitPerPage || 10)) {
-							updatedPosts.pop();
+			.then(
+				({
+					errors,
+					data: {
+						createPost: {
+							_id,
+							title,
+							content,
+							imageUrl: imagePath,
+							creator: { name: creator },
+							createdAt,
+						},
+					},
+				}) => {
+					//? Check if we got any errors
+					if (errors) {
+						//? Check specifically if the server returned an
+						//? Unauthorized status code and throw that error
+						if (errors[0].status === 401) {
+							throw new Error('Failed to post, you are not authenticated!');
 						}
+
+						//? If not, then throw the default error message
+						throw new Error('Post creation failed!');
 					}
-					//? Finally, update the screen with the new updated information, if needed
-					return {
-						posts: updatedPosts,
-						isEditing: false,
-						editPost: null,
-						editLoading: false,
+
+					//? Create an object with all the post data, so we can inject
+					//? that into the state if needed
+					const post = {
+						_id,
+						title,
+						content,
+						imagePath,
+						creator,
+						createdAt,
 					};
-				});
-			})
+
+					//? Check the state to see if we should render this specific post
+					this.setState((previousState) => {
+						//? Create a variable to store the current posts
+						let updatedPosts = [...previousState.posts];
+
+						//? If we are editing a post that is currently being displayed
+						//? on screen, we need to update it after the editing is complete
+						if (previousState.editPost) {
+							//? Find where the post is on the user screen
+							const postIndex = previousState.posts.findIndex(
+								(p) => p._id === previousState.editPost._id
+							);
+							//? Update that specific post with the new updated information
+							updatedPosts[postIndex] = post;
+						} else if (previousState.postPage === 1) {
+							//? If we are on page 1 and we are not editing a post, then we must
+							//? be creating a new one. Since our posts are ordered from newest to
+							//? oldest, this newly created post needs to be moved to the very top
+							//? of our displayed posts list
+							updatedPosts.unshift(post);
+							//? If adding the new post overflows the page and disrespects the page
+							//? limit, we must destroy the last post as it will now be on the
+							//? next page instead
+							if (updatedPosts.length > (previousState.postLimitPerPage || 10)) {
+								updatedPosts.pop();
+							}
+						}
+						//? Finally, update the screen with the new updated information, if needed
+						return {
+							posts: updatedPosts,
+							isEditing: false,
+							editPost: null,
+							editLoading: false,
+						};
+					});
+				}
+			)
 			.catch((err) => {
 				console.log(err);
 				this.setState({

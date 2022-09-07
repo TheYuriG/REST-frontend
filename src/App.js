@@ -76,32 +76,39 @@ class App extends Component {
 			.then((res) => {
 				return res.json();
 			})
-			.then(({errors, data: {authenticate: { token, userId }}}) => {
-				//? Check specifically if the server returned an
-				//? Unauthorized status code and throw that error
+			.then(
+				({
+					errors,
+					data: {
+						authenticate: { token, userId },
+					},
+				}) => {
+					//? Check specifically if the server returned an
+					//? Unauthorized status code and throw that error
 
-				if (errors) {
-					if (errors?.[0]?.status === 401) {
-						throw new Error('Failed to login this user, invalid credentials!');
+					if (errors) {
+						if (errors[0].status === 401) {
+							throw new Error('Failed to login this user, invalid credentials!');
+						}
+
+						//? If not, then throw the default error message
+						throw new Error('User login failed!');
 					}
-					
-					//? If not, then throw the default error message
-					throw new Error('User login failed!');
-				}
 
-				this.setState({
-					isAuth: true,
-					token,
-					authLoading: false,
-					userId,
-				});
-				localStorage.setItem('token', token);
-				localStorage.setItem('userId', userId);
-				const remainingMilliseconds = 60 * 60 * 1000;
-				const expiryDate = new Date(new Date().getTime() + remainingMilliseconds);
-				localStorage.setItem('expiryDate', expiryDate.toISOString());
-				this.setAutoLogout(remainingMilliseconds);
-			})
+					this.setState({
+						isAuth: true,
+						token,
+						authLoading: false,
+						userId,
+					});
+					localStorage.setItem('token', token);
+					localStorage.setItem('userId', userId);
+					const remainingMilliseconds = 60 * 60 * 1000;
+					const expiryDate = new Date(new Date().getTime() + remainingMilliseconds);
+					localStorage.setItem('expiryDate', expiryDate.toISOString());
+					this.setAutoLogout(remainingMilliseconds);
+				}
+			)
 			.catch((err) => {
 				console.log(err);
 				this.setState({
@@ -133,11 +140,12 @@ class App extends Component {
 			.then((res) => {
 				return res.json();
 			})
-			.then(({errors}) => {
-				//? Check specifically if the server returned an
-				//? Unprocessable Entity status code and throw that error
+			.then(({ errors }) => {
+				//? Check if we got any errors
 				if (errors) {
-					if (errors?.[0]?.status === 422) {
+					//? Check specifically if the server returned an
+					//? Unprocessable Entity status code and throw that error
+					if (errors[0].status === 422) {
 						throw new Error('Validation failed!');
 					}
 
@@ -154,7 +162,7 @@ class App extends Component {
 				this.setState({
 					isAuth: false,
 					authLoading: false,
-					error
+					error,
 				});
 			});
 	};
