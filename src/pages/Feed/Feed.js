@@ -254,7 +254,7 @@ class Feed extends Component {
 						_id,
 						title,
 						content,
-						imagePath,
+						imageUrl: imagePath,
 						creator,
 						createdAt,
 					};
