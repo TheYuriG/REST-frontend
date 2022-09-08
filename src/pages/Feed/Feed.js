@@ -44,7 +44,12 @@ class Feed extends Component {
 				//? Parse the user status response
 				return res.json();
 			})
-			.then(({ data: { userStatus } }) => {
+			.then(({ errors, data: { userStatus } }) => {
+				//? Check if we got any errors
+				if (errors) {
+					//? Throw the default error message
+					throw new Error('Failed to retrieve user status!');
+				}
 				//? Pass the response to the state manager and render the status on the client UI
 				this.setState({ status: userStatus });
 			})
@@ -152,11 +157,14 @@ class Feed extends Component {
 				//? Parse the response
 				return res.json();
 			})
-			.then(({ data: { updateStatus } }) => {
-				//? Check if we got a 'false' boolean response. If so,
-				//? the status has failed to be updated
-				if (!updateStatus) {
-					throw new Error('Failed to update your status!');
+			.then(({ errors, data: { updateStatus } }) => {
+				//? Check if we got any errors
+				if (errors) {
+					//? Check if we got any errors
+					if (errors) {
+						//? Throw the default error message
+						throw new Error('Failed to update user status!');
+					}
 				}
 			})
 			.catch(this.catchError);
