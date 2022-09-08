@@ -25,24 +25,28 @@ class Feed extends Component {
 	};
 
 	componentDidMount() {
+		const graphqlUserStatusQuery = {
+			query: `
+            {
+                userStatus(userId: "${this.props.userId}")
+            }`,
+		};
 		//? Make a network request for the logged-in user status
-		fetch(server + '/auth/status', {
+		fetch(server + '/graphql', {
+			method: 'POST',
 			headers: {
 				Authorization: 'Bearer ' + this.props.token,
+				'Content-Type': 'application/json',
 			},
+			body: JSON.stringify(graphqlUserStatusQuery),
 		})
 			.then((res) => {
-				//? Throw an error if we get anything else other than 200 SUCCESS
-				if (res.status !== 200) {
-					throw new Error('Failed to fetch user status.');
-				}
 				//? Parse the user status response
 				return res.json();
 			})
-			.then((resData) => {
+			.then(({ data: { userStatus } }) => {
 				//? Pass the response to the state manager and render the status on the client UI
-				resData = JSON.parse(resData);
-				this.setState({ status: resData.status });
+				this.setState({ status: userStatus });
 			})
 			.catch(this.catchError);
 
