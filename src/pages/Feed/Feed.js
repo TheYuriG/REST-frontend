@@ -130,20 +130,34 @@ class Feed extends Component {
 
 	statusUpdateHandler = (event) => {
 		event.preventDefault();
-		const formData = new FormData();
-		formData.append('status', this.state.status);
-		fetch(server + '/auth/status', {
+
+		//? Build the GraphQL mutation query
+		const graphqlStatusUpdateMutation = {
+			query: `
+            mutation {
+                updateStatus(newStatus: "${this.state.status}")
+            }`,
+		};
+
+		//? Request mutation to the GraphQL endpoint
+		fetch(server + '/graphql', {
 			method: 'POST',
-			body: formData,
+			body: JSON.stringify(graphqlStatusUpdateMutation),
 			headers: {
 				Authorization: 'Bearer ' + this.props.token,
+				'Content-Type': 'application/json',
 			},
 		})
 			.then((res) => {
-				if (res.status !== 200 && res.status !== 201) {
-					throw new Error("Can't update status!");
-				}
+				//? Parse the response
 				return res.json();
+			})
+			.then(({ data: { updateStatus } }) => {
+				//? Check if we got a 'false' boolean response. If so,
+				//? the status has failed to be updated
+				if (!updateStatus) {
+					throw new Error('Failed to update your status!');
+				}
 			})
 			.catch(this.catchError);
 	};
